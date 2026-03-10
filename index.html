@@ -3,36 +3,71 @@
 <head>
 
 <meta name="viewport" content="width=device-width,initial-scale=1">
-
 <title>Urban Crime Audit</title>
 
 <style>
 
 body{
-font-family:Arial;
+font-family: system-ui, Arial;
+background:#f5f7fa;
 padding:20px;
-max-width:500px;
+max-width:520px;
 margin:auto;
 }
 
-input,select,textarea,button{
+.card{
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+h2{
+margin-top:0;
+}
+
+input,select,textarea{
 width:100%;
 padding:12px;
-margin-top:8px;
-margin-bottom:12px;
+margin-top:6px;
+margin-bottom:16px;
 font-size:16px;
+border:1px solid #ddd;
+border-radius:8px;
+box-sizing:border-box;
+}
+
+textarea{
+min-height:90px;
 }
 
 button{
+width:100%;
+padding:14px;
+font-size:16px;
 background:#2c7be5;
 color:white;
 border:none;
-border-radius:6px;
+border-radius:8px;
+cursor:pointer;
 }
 
-#locationStatus{
-font-size:14px;
-color:#444;
+button:active{
+transform:scale(0.98);
+}
+
+#status{
+margin-top:15px;
+font-weight:600;
+text-align:center;
+}
+
+.success{
+color:#1a7f37;
+}
+
+.sending{
+color:#666;
 }
 
 </style>
@@ -40,6 +75,8 @@ color:#444;
 </head>
 
 <body>
+
+<div class="card">
 
 <h2>Registrar punto</h2>
 
@@ -51,13 +88,10 @@ color:#444;
 <option value="espacio_permanencia">Lugar para quedarse</option>
 <option value="arquitectura_hostil">Arquitectura hostil</option>
 <option value="delito_plausible">Lugar para delito</option>
+<option value="otro_aspecto">otro_aspecto</option>
 </select>
 
 <textarea id="comment" placeholder="Comentario"></textarea>
-
-<button onclick="getLocation()">Capturar ubicación 📍</button>
-
-<p id="locationStatus">Ubicación no registrada</p>
 
 <input type="file" id="photo" accept="image/*" capture="environment">
 
@@ -65,51 +99,24 @@ color:#444;
 
 <p id="status"></p>
 
+</div>
+
 <script>
 
 const scriptURL = "https://script.google.com/macros/s/AKfycbxqNEETwQmG-1_cOP3CVvRCzCWH6DUsRPGmk8JKaOoa3RXEjqmsOU2QQy8zmbsEoJf0wA/exec";
 
-let lat = null;
-let lon = null;
-let accuracy = null;
-
-function getLocation(){
-
-navigator.geolocation.getCurrentPosition(
-
-function(pos){
-
-lat = pos.coords.latitude;
-lon = pos.coords.longitude;
-accuracy = pos.coords.accuracy;
-
-document.getElementById("locationStatus").innerText =
-"Ubicación registrada ✔ (" +
-lat.toFixed(5) + "," +
-lon.toFixed(5) + ")";
-
-},
-
-function(){
-
-document.getElementById("locationStatus").innerText =
-"No se pudo obtener la ubicación";
-
-}
-
-);
-
-}
-
 async function send(){
 
-if(lat === null){
+let status = document.getElementById("status");
 
-alert("Primero captura la ubicación");
+status.className = "sending";
+status.innerText = "Enviando...";
 
-return;
+navigator.geolocation.getCurrentPosition(async pos => {
 
-}
+let lat = pos.coords.latitude;
+let lon = pos.coords.longitude;
+let accuracy = pos.coords.accuracy;
 
 let student = document.getElementById("student").value;
 let mission = document.getElementById("mission").value;
@@ -120,13 +127,10 @@ let file = document.getElementById("photo").files[0];
 let photoBase64 = "";
 
 if(file){
-
 photoBase64 = await compressImage(file);
-
 }
 
 let payload = {
-
 student,
 mission,
 comment,
@@ -134,7 +138,6 @@ lat,
 lon,
 accuracy,
 photo: photoBase64
-
 };
 
 fetch(scriptURL,{
@@ -144,7 +147,13 @@ body:JSON.stringify(payload)
 .then(r=>r.text())
 .then(()=>{
 
-document.getElementById("status").innerText="Registro enviado ✔";
+status.className = "success";
+status.innerText = "✔ Registro enviado correctamente";
+
+document.getElementById("comment").value="";
+document.getElementById("photo").value="";
+
+});
 
 });
 
