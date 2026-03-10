@@ -1,15 +1,49 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta name="viewport" content="width=device-width,initial-scale=1">
+
 <title>Urban Crime Audit</title>
+
+<style>
+
+body{
+font-family:Arial;
+padding:20px;
+max-width:500px;
+margin:auto;
+}
+
+input,select,textarea,button{
+width:100%;
+padding:12px;
+margin-top:8px;
+margin-bottom:12px;
+font-size:16px;
+}
+
+button{
+background:#2c7be5;
+color:white;
+border:none;
+border-radius:6px;
+}
+
+#locationStatus{
+font-size:14px;
+color:#444;
+}
+
+</style>
+
 </head>
 
 <body>
 
 <h2>Registrar punto</h2>
 
-<input id="student" placeholder="Nombre o grupo"><br><br>
+<input id="student" placeholder="Nombre o grupo">
 
 <select id="mission">
 <option value="comercio_local">Comercio local</option>
@@ -19,17 +53,15 @@
 <option value="delito_plausible">Lugar para delito</option>
 </select>
 
-<br><br>
-
 <textarea id="comment" placeholder="Comentario"></textarea>
 
-<br><br>
+<button onclick="getLocation()">Capturar ubicación 📍</button>
+
+<p id="locationStatus">Ubicación no registrada</p>
 
 <input type="file" id="photo" accept="image/*" capture="environment">
 
-<br><br>
-
-<button onclick="send()">Enviar</button>
+<button onclick="send()">Enviar registro</button>
 
 <p id="status"></p>
 
@@ -37,13 +69,47 @@
 
 const scriptURL = "https://script.google.com/macros/s/AKfycbxqNEETwQmG-1_cOP3CVvRCzCWH6DUsRPGmk8JKaOoa3RXEjqmsOU2QQy8zmbsEoJf0wA/exec";
 
+let lat = null;
+let lon = null;
+let accuracy = null;
+
+function getLocation(){
+
+navigator.geolocation.getCurrentPosition(
+
+function(pos){
+
+lat = pos.coords.latitude;
+lon = pos.coords.longitude;
+accuracy = pos.coords.accuracy;
+
+document.getElementById("locationStatus").innerText =
+"Ubicación registrada ✔ (" +
+lat.toFixed(5) + "," +
+lon.toFixed(5) + ")";
+
+},
+
+function(){
+
+document.getElementById("locationStatus").innerText =
+"No se pudo obtener la ubicación";
+
+}
+
+);
+
+}
+
 async function send(){
 
-navigator.geolocation.getCurrentPosition(async pos => {
+if(lat === null){
 
-let lat = pos.coords.latitude;
-let lon = pos.coords.longitude;
-let accuracy = pos.coords.accuracy;
+alert("Primero captura la ubicación");
+
+return;
+
+}
 
 let student = document.getElementById("student").value;
 let mission = document.getElementById("mission").value;
@@ -54,10 +120,13 @@ let file = document.getElementById("photo").files[0];
 let photoBase64 = "";
 
 if(file){
+
 photoBase64 = await compressImage(file);
+
 }
 
 let payload = {
+
 student,
 mission,
 comment,
@@ -65,6 +134,7 @@ lat,
 lon,
 accuracy,
 photo: photoBase64
+
 };
 
 fetch(scriptURL,{
@@ -73,8 +143,8 @@ body:JSON.stringify(payload)
 })
 .then(r=>r.text())
 .then(()=>{
-document.getElementById("status").innerText="Enviado ✔";
-});
+
+document.getElementById("status").innerText="Registro enviado ✔";
 
 });
 
