@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Urban Crime Audit</title>
+</head>
+
+<body>
+
+<h2>Registrar punto</h2>
+
+<input id="student" placeholder="Nombre o grupo"><br><br>
+
+<select id="mission">
+<option value="comercio_local">Comercio local</option>
+<option value="comercio_turistico">Comercio turístico</option>
+<option value="espacio_permanencia">Lugar para quedarse</option>
+<option value="arquitectura_hostil">Arquitectura hostil</option>
+<option value="delito_plausible">Lugar para delito</option>
+</select>
+
+<br><br>
+
+<textarea id="comment" placeholder="Comentario"></textarea>
+
+<br><br>
+
+<input type="file" id="photo" accept="image/*" capture="environment">
+
+<br><br>
+
+<button onclick="send()">Enviar</button>
+
+<p id="status"></p>
+
+<script>
+
+const scriptURL = "https://script.google.com/macros/s/AKfycbxqNEETwQmG-1_cOP3CVvRCzCWH6DUsRPGmk8JKaOoa3RXEjqmsOU2QQy8zmbsEoJf0wA/exec";
+
+async function send(){
+
+navigator.geolocation.getCurrentPosition(async pos => {
+
+let lat = pos.coords.latitude;
+let lon = pos.coords.longitude;
+let accuracy = pos.coords.accuracy;
+
+let student = document.getElementById("student").value;
+let mission = document.getElementById("mission").value;
+let comment = document.getElementById("comment").value;
+
+let file = document.getElementById("photo").files[0];
+
+let photoBase64 = "";
+
+if(file){
+photoBase64 = await compressImage(file);
+}
+
+let payload = {
+student,
+mission,
+comment,
+lat,
+lon,
+accuracy,
+photo: photoBase64
+};
+
+fetch(scriptURL,{
+method:"POST",
+body:JSON.stringify(payload)
+})
+.then(r=>r.text())
+.then(()=>{
+document.getElementById("status").innerText="Enviado ✔";
+});
+
+});
+
+}
+
+function compressImage(file){
+
+return new Promise(resolve => {
+
+let reader = new FileReader();
+
+reader.onload = function(e){
+
+let img = new Image();
+
+img.onload = function(){
+
+let canvas = document.createElement("canvas");
+
+let maxSize = 800;
+
+let ratio = Math.min(maxSize/img.width, maxSize/img.height);
+
+canvas.width = img.width * ratio;
+canvas.height = img.height * ratio;
+
+let ctx = canvas.getContext("2d");
+
+ctx.drawImage(img,0,0,canvas.width,canvas.height);
+
+let base64 = canvas.toDataURL("image/jpeg",0.7);
+
+resolve(base64.split(",")[1]);
+
+};
+
+img.src = e.target.result;
+
+};
+
+reader.readAsDataURL(file);
+
+});
+
+}
+
+</script>
+
+</body>
+</html>
